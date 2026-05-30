@@ -1,6 +1,7 @@
 import queue
 import threading
 import tkinter as tk
+from pathlib import Path
 from tkinter import messagebox, ttk
 
 from analytics.statistics import Statistics
@@ -10,43 +11,191 @@ from ui.widgets import LineChart
 
 
 class Dashboard:
+    AZUL_OSCURO = "#082f63"
+    AZUL_MEDIO = "#0f5fa8"
+    AZUL_CLARO = "#eaf4ff"
+    DORADO = "#f59e0b"
+    AZUL_SELECCION = "#1d4ed8"
+    FONDO = "#eff6ff"
+    TEXTO = "#12345b"
+
     def __init__(self):
         self.ventana = tk.Tk()
         self.ventana.title("Album Mundial 2026 - Simulacion de intercambios")
         self.ventana.geometry("1080x720")
         self.ventana.minsize(900, 620)
+        self.ventana.configure(background=self.FONDO)
         self.simulator = None
         self.automatico = False
         self.cola = queue.Queue()
         self.resultados_analisis = {}
+        self._configurar_estilos()
         self.crear_widgets()
 
+    def _configurar_estilos(self):
+        estilo = ttk.Style(self.ventana)
+        estilo.theme_use("clam")
+        estilo.configure(".", font=("Segoe UI", 10), background=self.FONDO, foreground=self.TEXTO)
+        estilo.configure("TFrame", background=self.FONDO)
+        estilo.configure("Panel.TFrame", background="#ffffff", relief="solid", borderwidth=1)
+        estilo.configure("Header.TFrame", background=self.AZUL_OSCURO)
+        estilo.configure(
+            "Title.TLabel",
+            background=self.AZUL_OSCURO,
+            foreground="#ffffff",
+            font=("Segoe UI", 18, "bold"),
+        )
+        estilo.configure(
+            "Subtitle.TLabel",
+            background=self.AZUL_OSCURO,
+            foreground="#dbeafe",
+            font=("Segoe UI", 10),
+        )
+        estilo.configure("TLabel", background=self.FONDO, foreground=self.TEXTO)
+        estilo.configure(
+            "Section.TLabel",
+            background="#ffffff",
+            foreground=self.AZUL_OSCURO,
+            font=("Segoe UI", 11, "bold"),
+        )
+        estilo.configure(
+            "Status.TLabel",
+            background=self.AZUL_CLARO,
+            foreground=self.AZUL_OSCURO,
+            padding=8,
+            anchor="center",
+            justify="center",
+        )
+        estilo.configure(
+            "Summary.TLabel",
+            background="#fffbeb",
+            foreground="#92400e",
+            padding=8,
+            font=("Segoe UI", 10, "bold"),
+            anchor="center",
+            justify="center",
+        )
+        estilo.configure(
+            "TNotebook",
+            background=self.FONDO,
+            borderwidth=0,
+            tabmargins=(0, 4, 0, 0),
+        )
+        estilo.configure(
+            "TNotebook.Tab",
+            background="#dbeafe",
+            foreground=self.AZUL_OSCURO,
+            padding=(16, 9),
+            font=("Segoe UI", 10, "bold"),
+        )
+        estilo.map(
+            "TNotebook.Tab",
+            background=[("selected", self.AZUL_MEDIO)],
+            foreground=[("selected", "#ffffff")],
+        )
+        estilo.configure(
+            "Accent.TButton",
+            background=self.AZUL_MEDIO,
+            foreground="#ffffff",
+            padding=(10, 6),
+            font=("Segoe UI", 9, "bold"),
+        )
+        estilo.map(
+            "Accent.TButton",
+            background=[("active", self.AZUL_OSCURO), ("disabled", "#9ca3af")],
+            foreground=[("disabled", "#f3f4f6")],
+        )
+        estilo.configure(
+            "Gold.TButton",
+            background=self.DORADO,
+            foreground="#422006",
+            padding=(10, 6),
+            font=("Segoe UI", 9, "bold"),
+        )
+        estilo.map("Gold.TButton", background=[("active", "#d97706"), ("disabled", "#d1d5db")])
+        estilo.configure(
+            "Treeview",
+            background="#ffffff",
+            fieldbackground="#ffffff",
+            foreground=self.TEXTO,
+            rowheight=27,
+        )
+        estilo.configure(
+            "Treeview.Heading",
+            background=self.AZUL_OSCURO,
+            foreground="#ffffff",
+            padding=6,
+            font=("Segoe UI", 9, "bold"),
+        )
+        estilo.map(
+            "Treeview",
+            background=[("selected", self.AZUL_SELECCION)],
+            foreground=[("selected", "#ffffff")],
+        )
+
     def crear_widgets(self):
-        encabezado = ttk.Frame(self.ventana, padding=(14, 12))
-        encabezado.pack(fill="x")
-        ttk.Label(
-            encabezado,
-            text="Album Mundial 2026",
-            font=("Segoe UI", 16, "bold"),
-        ).pack(anchor="w")
-        ttk.Label(
-            encabezado,
-            text="Simulacion de compras, intercambios y completacion del album.",
-        ).pack(anchor="w")
+        self._crear_encabezado()
 
         self.pestanas = ttk.Notebook(self.ventana)
-        self.pestanas.pack(fill="both", expand=True, padx=12, pady=(0, 12))
-        self.tab_proceso = ttk.Frame(self.pestanas, padding=10)
-        self.tab_analisis = ttk.Frame(self.pestanas, padding=10)
-        self.pestanas.add(self.tab_proceso, text="Proceso de intercambio")
-        self.pestanas.add(self.tab_analisis, text="Analisis por poblacion")
+        self.pestanas.pack(fill="both", expand=True, padx=14, pady=(8, 14))
+        self.tab_proceso = ttk.Frame(self.pestanas, padding=12)
+        self.tab_analisis = ttk.Frame(self.pestanas, padding=12)
+        self.pestanas.add(self.tab_proceso, text="  PROCESO DE INTERCAMBIO  ")
+        self.pestanas.add(self.tab_analisis, text="  ANALISIS POR POBLACION  ")
         self._crear_tab_proceso()
         self._crear_tab_analisis()
 
+    def _crear_encabezado(self):
+        encabezado = tk.Canvas(
+            self.ventana,
+            height=148,
+            background=self.AZUL_OSCURO,
+            highlightthickness=0,
+        )
+        encabezado.pack(fill="x")
+        ruta_fondo = Path(__file__).resolve().parent.parent / "assets" / "mundial-stadium-header.png"
+        try:
+            self.imagen_encabezado = tk.PhotoImage(file=str(ruta_fondo))
+            encabezado.create_image(0, 0, image=self.imagen_encabezado, anchor="nw", tags="fondo")
+        except tk.TclError:
+            self.imagen_encabezado = None
+        encabezado.create_rectangle(
+            0,
+            0,
+            4000,
+            148,
+            fill=self.AZUL_OSCURO,
+            stipple="gray50",
+            outline="",
+            tags="velo",
+        )
+        encabezado.create_text(
+            540,
+            59,
+            text="MUNDIAL 2026  |  ALBUM DE CROMOS",
+            fill="#ffffff",
+            font=("Segoe UI", 20, "bold"),
+            tags="titulo",
+        )
+        encabezado.create_text(
+            540,
+            92,
+            text="Simulador de compras, intercambios y progreso de participantes",
+            fill="#dbeafe",
+            font=("Segoe UI", 11),
+            tags="subtitulo",
+        )
+        encabezado.bind("<Configure>", lambda event: self._centrar_encabezado(encabezado, event.width))
+
+    def _centrar_encabezado(self, encabezado, ancho):
+        encabezado.coords("titulo", ancho / 2, 59)
+        encabezado.coords("subtitulo", ancho / 2, 92)
+
     def _crear_tab_proceso(self):
-        controles = ttk.Frame(self.tab_proceso)
-        controles.pack(fill="x")
-        ttk.Label(controles, text="Participantes:").pack(side="left")
+        controles = ttk.Frame(self.tab_proceso, padding=10, style="Panel.TFrame")
+        controles.pack(fill="x", pady=(0, 8))
+        ttk.Label(controles, text="Configurar partido", style="Section.TLabel").pack(side="left")
+        ttk.Label(controles, text="   Participantes:").pack(side="left")
         self.valor_participantes = tk.StringVar()
         self.valor_participantes.trace_add("write", self._al_cambiar_participantes)
         validar_participantes = (self.ventana.register(self._validar_entrada_participantes), "%P")
@@ -58,12 +207,18 @@ class Dashboard:
             validatecommand=validar_participantes,
         )
         self.entrada_participantes.pack(side="left", padx=6)
-        ttk.Button(controles, text="Nueva simulacion", command=self.iniciar).pack(side="left")
+        ttk.Button(
+            controles,
+            text="Nueva simulacion",
+            command=self.iniciar,
+            style="Accent.TButton",
+        ).pack(side="left")
         self.boton_ejecutar_ronda = ttk.Button(
             controles,
             text="Ejecutar una ronda",
             command=self.ejecutar_ronda,
             state="disabled",
+            style="Gold.TButton",
         )
         self.boton_ejecutar_ronda.pack(
             side="left", padx=6
@@ -73,11 +228,14 @@ class Dashboard:
             text="Simular hasta completar",
             command=self.simular_hasta_completar,
             state="disabled",
+            style="Accent.TButton",
         )
         self.boton_simular_completo.pack(side="left")
 
         self.estado = tk.StringVar(value="Configure una poblacion para iniciar.")
-        ttk.Label(self.tab_proceso, textvariable=self.estado, padding=(0, 10)).pack(fill="x")
+        ttk.Label(self.tab_proceso, textvariable=self.estado, style="Status.TLabel").pack(
+            fill="x", pady=(0, 8)
+        )
         self.tabla = ttk.Treeview(
             self.tab_proceso,
             columns=(
@@ -104,14 +262,15 @@ class Dashboard:
             self.tabla.heading(columna, text=titulo)
             self.tabla.column(columna, width=ancho, anchor="center")
         self.tabla.pack(fill="both", expand=True)
+        self.tabla.tag_configure("completo", background="#dbeafe", foreground="#1e3a8a")
+        self.tabla.tag_configure("proceso", background="#ffffff", foreground=self.TEXTO)
 
         self.resumen_proceso = tk.StringVar(value="")
         ttk.Label(
             self.tab_proceso,
             textvariable=self.resumen_proceso,
-            padding=(0, 10),
-            font=("Segoe UI", 10, "bold"),
-        ).pack(fill="x")
+            style="Summary.TLabel",
+        ).pack(fill="x", pady=(8, 0))
 
     def _validar_entrada_participantes(self, valor):
         return valor == "" or (valor.isdigit() and int(valor) <= 50)
@@ -131,9 +290,10 @@ class Dashboard:
         self.boton_simular_completo.config(state=estado)
 
     def _crear_tab_analisis(self):
-        controles = ttk.Frame(self.tab_analisis)
-        controles.pack(fill="x")
-        ttk.Label(controles, text="Comparar poblaciones desde 1 hasta:").pack(side="left")
+        controles = ttk.Frame(self.tab_analisis, padding=10, style="Panel.TFrame")
+        controles.pack(fill="x", pady=(0, 8))
+        ttk.Label(controles, text="Tabla de posiciones", style="Section.TLabel").pack(side="left")
+        ttk.Label(controles, text="   Comparar poblaciones desde 1 hasta:").pack(side="left")
         self.entrada_max_participantes = ttk.Entry(controles, width=7)
         self.entrada_max_participantes.insert(0, "50")
         self.entrada_max_participantes.pack(side="left", padx=6)
@@ -145,14 +305,15 @@ class Dashboard:
             controles,
             text="Ejecutar analisis",
             command=self.iniciar_analisis,
+            style="Accent.TButton",
         )
         self.boton_analizar.pack(side="left")
 
         self.estado_analisis = tk.StringVar(
             value="La grafica mostrara el minimo de fundas adicionales necesario para completar."
         )
-        ttk.Label(self.tab_analisis, textvariable=self.estado_analisis, padding=(0, 10)).pack(
-            fill="x"
+        ttk.Label(self.tab_analisis, textvariable=self.estado_analisis, style="Status.TLabel").pack(
+            fill="x", pady=(0, 8)
         )
 
         cuerpo = ttk.Panedwindow(self.tab_analisis, orient="vertical")
@@ -187,9 +348,8 @@ class Dashboard:
         ttk.Label(
             self.tab_analisis,
             textvariable=self.resumen_analisis,
-            padding=(0, 8),
-            font=("Segoe UI", 10, "bold"),
-        ).pack(fill="x")
+            style="Summary.TLabel",
+        ).pack(fill="x", pady=(8, 0))
 
     def iniciar(self):
         try:
@@ -260,6 +420,7 @@ class Dashboard:
                     participante.intercambios_recibidos,
                     "Completo" if participante.album.completado() else "En proceso",
                 ),
+                tags=("completo" if participante.album.completado() else "proceso",),
             )
         fundas = [p.fundas_compradas for p in self.simulator.participantes]
         minimo = min(fundas)
