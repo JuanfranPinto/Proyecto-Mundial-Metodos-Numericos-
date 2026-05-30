@@ -4,12 +4,20 @@ import tkinter as tk
 class LineChart(tk.Canvas):
     """Grafica lineal liviana para no depender de matplotlib en la interfaz."""
 
+    FONDO = "#f8fbff"
+    BORDE = "#bfdbfe"
+    EJE = "#1e3a8a"
+    REJILLA = "#dbeafe"
+    LINEA = "#0f5fa8"
+    PUNTO = "#f59e0b"
+    TEXTO = "#12345b"
+
     def __init__(self, master, **kwargs):
         super().__init__(
             master,
-            background="white",
+            background=self.FONDO,
             highlightthickness=1,
-            highlightbackground="#cbd5e1",
+            highlightbackground=self.BORDE,
             **kwargs,
         )
         self.datos = []
@@ -26,14 +34,20 @@ class LineChart(tk.Canvas):
         ancho = max(self.winfo_width(), 360)
         alto = max(self.winfo_height(), 220)
         margen_izq, margen_der, margen_sup, margen_inf = 64, 24, 38, 48
-        self.create_text(ancho / 2, 18, text=self.titulo, font=("Segoe UI", 11, "bold"))
-        self.create_line(margen_izq, margen_sup, margen_izq, alto - margen_inf, fill="#475569")
+        self.create_text(
+            ancho / 2,
+            18,
+            text=self.titulo,
+            fill=self.TEXTO,
+            font=("Segoe UI", 11, "bold"),
+        )
+        self.create_line(margen_izq, margen_sup, margen_izq, alto - margen_inf, fill=self.EJE)
         self.create_line(
             margen_izq,
             alto - margen_inf,
             ancho - margen_der,
             alto - margen_inf,
-            fill="#475569",
+            fill=self.EJE,
         )
         if not self.datos:
             self.create_text(
@@ -58,24 +72,31 @@ class LineChart(tk.Canvas):
         for paso in range(5):
             valor = round(max_y * paso / 4)
             y = y_px(valor)
-            self.create_line(margen_izq, y, ancho - margen_der, y, fill="#e2e8f0")
-            self.create_text(margen_izq - 8, y, text=str(valor), anchor="e", fill="#475569")
+            self.create_line(margen_izq, y, ancho - margen_der, y, fill=self.REJILLA)
+            self.create_text(margen_izq - 8, y, text=str(valor), anchor="e", fill=self.TEXTO)
 
         puntos = []
         for x, y in self.datos:
             puntos.extend([x_px(x), y_px(y)])
         if len(puntos) >= 4:
-            self.create_line(*puntos, fill="#2563eb", width=2)
+            self.create_line(*puntos, fill=self.LINEA, width=3)
         for x, y in self.datos:
             px, py = x_px(x), y_px(y)
-            self.create_oval(px - 3, py - 3, px + 3, py + 3, fill="#2563eb", outline="")
-            self.create_text(px, alto - margen_inf + 16, text=str(x), fill="#475569")
+            self.create_oval(
+                px - 4,
+                py - 4,
+                px + 4,
+                py + 4,
+                fill=self.PUNTO,
+                outline=self.EJE,
+            )
+            self.create_text(px, alto - margen_inf + 16, text=str(x), fill=self.TEXTO)
 
-        self.create_text(ancho / 2, alto - 10, text="Numero de participantes", fill="#334155")
+        self.create_text(ancho / 2, alto - 10, text="Numero de participantes", fill=self.TEXTO)
         self.create_text(
             14,
             alto / 2,
             text="Fundas adicionales minimas",
             angle=90,
-            fill="#334155",
+            fill=self.TEXTO,
         )
